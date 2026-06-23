@@ -8,6 +8,7 @@ import {
   getDocs,
   addDoc,
   updateDoc,
+  deleteDoc,
   query,
   orderBy,
   limit,
@@ -26,7 +27,6 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
 // ---------- Document-based config (menu, settings, form fields) ----------
-// Stored as single documents in a "config" collection for simplicity.
 
 export async function getConfigDoc(name, fallback) {
   try {
@@ -88,4 +88,14 @@ export async function setOrderStatus(orderId, status) {
     console.error("setOrderStatus failed", e);
     return false;
   }
-                  }
+}
+
+export async function deleteOrder(orderId) {
+  try {
+    await deleteDoc(doc(db, "orders", orderId));
+    return true;
+  } catch (e) {
+    console.error("deleteOrder failed", e);
+    return false;
+  }
+}
