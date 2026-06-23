@@ -14,6 +14,7 @@ export default function AdminView({
   onSettingsChange,
   onFormFieldsChange,
   onOrderStatusChange,
+  onOrderDelete,
   onExit,
   showToast,
 }) {
@@ -59,11 +60,18 @@ export default function AdminView({
       </header>
 
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "24px 18px 60px" }}>
-        {tab === "orders" && <OrdersTab orders={orders} onStatusChange={onOrderStatusChange} formFields={formFields} />}
+        {tab === "orders" && (
+          <OrdersTab
+            orders={orders}
+            onStatusChange={onOrderStatusChange}
+            onDelete={onOrderDelete}
+            formFields={formFields}
+          />
+        )}
         {tab === "menu" && <MenuTab menu={menu} onMenuChange={onMenuChange} showToast={showToast} />}
         {tab === "form" && <FormFieldsTab formFields={formFields} onFormFieldsChange={onFormFieldsChange} showToast={showToast} />}
         {tab === "settings" && <SettingsTab settings={settings} onSettingsChange={onSettingsChange} showToast={showToast} />}
       </main>
     </div>
   );
-}
+                }
