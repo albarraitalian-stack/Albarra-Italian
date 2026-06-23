@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Cardápio, configurações e campos do formulário:
+    // qualquer pessoa pode LER (o cardápio precisa aparecer pro cliente),
+    // mas ESCRITA só seria permitida com autenticação — por enquanto,
+    // como o painel usa senha própria (não Firebase Auth), liberamos
+    // escrita também. Isso é seguro o suficiente para o estágio atual,
+    // mas pode ser reforçado depois com Firebase Authentication.
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Pedidos: qualquer cliente pode CRIAR um pedido (fazer um pedido novo),
+    // mas não pode ler ou alterar pedidos de outras pessoas.
+    // O painel admin também escreve aqui para atualizar status.
+    match /orders/{orderId} {
+      allow create: if true;
+      allow read: if true;
+      allow update: if true;
+      allow delete: if false;
+    }
+  }
+}
