@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { getConfigDoc, setConfigDoc, fetchOrders, createOrder, setOrderStatus } from "./firebase.js";
+import { getConfigDoc, setConfigDoc, fetchOrders, createOrder, setOrderStatus, deleteOrder } from "./firebase.js";
 import { C, serif, sans } from "./theme.js";
 import ClientView from "./ClientView.jsx";
 import AdminLogin from "./AdminLogin.jsx";
@@ -105,6 +105,11 @@ export default function App() {
     await setOrderStatus(orderId, status);
   };
 
+  const removeOrder = async (orderId) => {
+    setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    await deleteOrder(orderId);
+  };
+
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: C.cream, fontFamily: sans, color: C.wine }}>
@@ -147,6 +152,7 @@ export default function App() {
           onSettingsChange={persistSettings}
           onFormFieldsChange={persistFormFields}
           onOrderStatusChange={updateOrderStatus}
+          onOrderDelete={removeOrder}
           onExit={() => {
             window.location.hash = "";
             setRoute("client");
@@ -176,4 +182,4 @@ export default function App() {
       )}
     </div>
   );
-    }
+      }
