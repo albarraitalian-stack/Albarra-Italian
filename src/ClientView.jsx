@@ -6,6 +6,7 @@ export default function ClientView({ menu, settings, formFields, cart, setCart, 
   const [activeCategory, setActiveCategory] = useState("massas");
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [zoomPhoto, setZoomPhoto] = useState(null);
 
   const categories = [
     { key: "massas", label: "Massas" },
@@ -141,48 +142,105 @@ export default function ClientView({ menu, settings, formFields, cart, setCart, 
               key={item.id}
               style={{
                 display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
                 gap: 14,
                 padding: "16px 0",
                 borderBottom: `1px solid ${C.wine}18`,
+                alignItems: "center",
               }}
             >
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 17, color: C.ink }}>{item.name}</div>
-                {item.desc && <div style={{ fontSize: 13, color: `${C.ink}99`, marginTop: 3 }}>{item.desc}</div>}
-                <div style={{ fontFamily: serif, fontSize: 14, color: C.wine, marginTop: 6, fontWeight: 600 }}>
-                  {item.price > 0 ? `+ ${formatBRL(item.price)}` : "Incluso"}
-                </div>
-              </div>
-              {inCart ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <button onClick={() => updateQty(item.id, -1)} style={qtyBtnStyle}>–</button>
-                  <span style={{ minWidth: 18, textAlign: "center", fontWeight: 700 }}>{inCart.qty}</span>
-                  <button onClick={() => updateQty(item.id, 1)} style={qtyBtnStyle}>+</button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => addToCart(item, activeCategory)}
+              {item.photo && (
+                <img
+                  src={item.photo}
+                  alt={item.name}
+                  onClick={() => setZoomPhoto({ url: item.photo, name: item.name })}
                   style={{
-                    background: C.wine,
-                    color: C.white,
-                    border: "none",
-                    borderRadius: 20,
-                    padding: "9px 18px",
-                    fontSize: 13,
-                    fontWeight: 600,
+                    width: 64,
+                    height: 64,
+                    borderRadius: 10,
+                    objectFit: "cover",
+                    flexShrink: 0,
                     cursor: "pointer",
-                    whiteSpace: "nowrap",
                   }}
-                >
-                  Adicionar
-                </button>
+                />
               )}
+              <div style={{ flex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 17, color: C.ink }}>{item.name}</div>
+                  {item.desc && <div style={{ fontSize: 13, color: `${C.ink}99`, marginTop: 3 }}>{item.desc}</div>}
+                  <div style={{ fontFamily: serif, fontSize: 14, color: C.wine, marginTop: 6, fontWeight: 600 }}>
+                    {item.price > 0 ? `+ ${formatBRL(item.price)}` : "Incluso"}
+                  </div>
+                </div>
+                {inCart ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <button onClick={() => updateQty(item.id, -1)} style={qtyBtnStyle}>–</button>
+                    <span style={{ minWidth: 18, textAlign: "center", fontWeight: 700 }}>{inCart.qty}</span>
+                    <button onClick={() => updateQty(item.id, 1)} style={qtyBtnStyle}>+</button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => addToCart(item, activeCategory)}
+                    style={{
+                      background: C.wine,
+                      color: C.white,
+                      border: "none",
+                      borderRadius: 20,
+                      padding: "9px 18px",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Adicionar
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}
       </main>
+
+      {zoomPhoto && (
+        <div
+          onClick={() => setZoomPhoto(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(10,4,5,0.92)",
+            zIndex: 80,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+            cursor: "zoom-out",
+          }}
+        >
+          <button
+            onClick={() => setZoomPhoto(null)}
+            style={{
+              position: "absolute",
+              top: 20,
+              right: 20,
+              background: "rgba(255,255,255,0.15)",
+              border: "none",
+              color: C.white,
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              fontSize: 20,
+              cursor: "pointer",
+            }}
+          >
+            ×
+          </button>
+          <img
+            src={zoomPhoto.url}
+            alt={zoomPhoto.name}
+            style={{ maxWidth: "100%", maxHeight: "80vh", borderRadius: 12, objectFit: "contain" }}
+          />
+        </div>
+      )}
 
       {cart.length > 0 && (
         <div
@@ -409,4 +467,4 @@ function CheckoutSheet({ cart, total, settings, formFields, onClose, onConfirm }
       </button>
     </Sheet>
   );
-}
+        }
