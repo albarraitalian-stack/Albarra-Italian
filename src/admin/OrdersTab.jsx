@@ -1,7 +1,9 @@
-import React from "react";
-import { C, serif, formatBRL } from "../theme.js";
+import React, { useState } from "react";
+import { C, serif, formatBRL, smallBtn } from "../theme.js";
 
-export default function OrdersTab({ orders, onStatusChange, formFields }) {
+export default function OrdersTab({ orders, onStatusChange, onDelete, formFields }) {
+  const [confirmId, setConfirmId] = useState(null);
+
   if (orders.length === 0) {
     return <p style={{ color: `${C.ink}88`, textAlign: "center", marginTop: 40 }}>Nenhum pedido recebido ainda.</p>;
   }
@@ -67,18 +69,41 @@ export default function OrdersTab({ orders, onStatusChange, formFields }) {
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
             <span style={{ fontWeight: 700, fontFamily: serif }}>{formatBRL(o.total)}</span>
-            <select
-              value={o.status}
-              onChange={(e) => onStatusChange(o.id, e.target.value)}
-              style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${C.wine}33`, fontSize: 12 }}
-            >
-              <option value="novo">Novo</option>
-              <option value="preparando">Preparando</option>
-              <option value="entregue">Entregue</option>
-            </select>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <select
+                value={o.status}
+                onChange={(e) => onStatusChange(o.id, e.target.value)}
+                style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${C.wine}33`, fontSize: 12 }}
+              >
+                <option value="novo">Novo</option>
+                <option value="preparando">Preparando</option>
+                <option value="entregue">Entregue</option>
+              </select>
+
+              {confirmId === o.id ? (
+                <>
+                  <button
+                    onClick={() => {
+                      onDelete(o.id);
+                      setConfirmId(null);
+                    }}
+                    style={smallBtn("#a33")}
+                  >
+                    Confirmar
+                  </button>
+                  <button onClick={() => setConfirmId(null)} style={smallBtn("#777")}>
+                    Cancelar
+                  </button>
+                </>
+              ) : (
+                <button onClick={() => setConfirmId(o.id)} style={smallBtn("#a33")}>
+                  Excluir
+                </button>
+              )}
+            </div>
           </div>
         </div>
       ))}
     </div>
   );
-}
+                  }
