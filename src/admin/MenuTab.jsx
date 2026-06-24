@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { C, formatBRL, smallBtn } from "../theme.js";
+import { uploadImage } from "../cloudinary.js";
 
 const CATEGORIES = [
   { key: "massas", label: "Massas" },
@@ -10,19 +11,21 @@ const CATEGORIES = [
 export default function MenuTab({ menu, onMenuChange, showToast }) {
   const [activeCat, setActiveCat] = useState("massas");
   const [editingId, setEditingId] = useState(null);
-  const [draft, setDraft] = useState({ name: "", desc: "", price: "" });
+  const [draft, setDraft] = useState({ name: "", desc: "", price: "", photo: "" });
   const [adding, setAdding] = useState(false);
+  const [uploadingId, setUploadingId] = useState(null);
+  const fileInputRefs = useRef({});
 
   const startEdit = (item) => {
     setEditingId(item.id);
-    setDraft({ name: item.name, desc: item.desc || "", price: String(item.price) });
+    setDraft({ name: item.name, desc: item.desc || "", price: String(item.price), photo: item.photo || "" });
     setAdding(false);
   };
 
   const startAdd = () => {
     setAdding(true);
     setEditingId(null);
-    setDraft({ name: "", desc: "", price: "" });
+    setDraft({ name: "", desc: "", price: "", photo: "" });
   };
 
   const cancel = () => {
@@ -39,11 +42,13 @@ export default function MenuTab({ menu, onMenuChange, showToast }) {
     const list = menu[activeCat] || [];
 
     if (adding) {
-      const newItem = { id: `${activeCat[0]}${Date.now()}`, name: draft.name, desc: draft.desc, price };
+      const newItem = { id: `${activeCat[0]}${Date.now()}`, name: draft.name, desc: draft.desc, price, photo: draft.photo || "" };
       onMenuChange({ ...menu, [activeCat]: [...list, newItem] });
       showToast("Item adicionado.");
     } else {
-      const updated = list.map((it) => (it.id === editingId ? { ...it, name: draft.name, desc: draft.desc, price } : it));
+      const updated = list.map((it) =>
+        it.id === editingId ? { ...it, name: draft.name, desc: draft.desc, price, photo: draft.photo || "" } : it
+      );
       onMenuChange({ ...menu, [activeCat]: updated });
       showToast("Item atualizado.");
     }
@@ -55,6 +60,31 @@ export default function MenuTab({ menu, onMenuChange, showToast }) {
     onMenuChange({ ...menu, [activeCat]: updated });
     showToast("Item removido.");
     if (editingId === id) cancel();
+  };
+
+  // Upload directly on an existing item card (outside the edit form),
+  // so you can change/remove the photo without entering edit mode.
+  const handlePhotoSelect = async (item, file) => {
+    if (!file) return;
+    setUploadingId(item.id);
+    try {
+      const url = await uploadImage(file);
+      const list = menu[activeCat] || [];
+      const updated = list.map((it) => (it.id === item.id ? { ...it, photo: url } : it));
+      onMenuChange({ ...menu, [activeCat]: updated });
+      showToast("Foto atualizada.");
+    } catch (e) {
+      showToast("Erro ao enviar a foto. Tente novamente.");
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
+  const removePhoto = (item) => {
+    const list = menu[activeCat] || [];
+    const updated = list.map((it) => (it.id === item.id ? { ...it, photo: "" } : it));
+    onMenuChange({ ...menu, [activeCat]: updated });
+    showToast("Foto removida.");
   };
 
   const inputStyle = {
@@ -98,16 +128,66 @@ export default function MenuTab({ menu, onMenuChange, showToast }) {
           {editingId === item.id ? (
             <EditForm draft={draft} setDraft={setDraft} onSave={save} onCancel={cancel} inputStyle={inputStyle} />
           ) : (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 15 }}>{item.name}</div>
-                {item.desc && <div style={{ fontSize: 12, color: `${C.ink}88` }}>{item.desc}</div>}
-                <div style={{ fontSize: 13, color: C.wine, fontWeight: 600, marginTop: 2 }}>{formatBRL(item.price)}</div>
+            <div style={{ display: "flex", gap: 12 }}>
+              {item.photo ? (
+                <img
+                  src={item.photo}
+                  alt={item.name}
+                  style={{ width: 64, height: 64, borderRadius: 8, objectFit: "cover", flexShrink: 0 }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 8,
+                    background: "#eee",
+                    flexShrink: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 10,
+                    color: "#999",
+                    textAlign: "center",
+                  }}
+                >
+                  sem foto
+                </div>
+              )}
+
+              <div style={{ flex: 1, display: "flex", justifyContent: "space-between", gap: 10 }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 15 }}>{item.name}</div>
+                  {item.desc && <div style={{ fontSize: 12, color: `${C.ink}88` }}>{item.desc}</div>}
+                  <div style={{ fontSize: 13, color: C.wine, fontWeight: 600, marginTop: 2 }}>{formatBRL(item.price)}</div>
+                </div>
               </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => startEdit(item)} style={smallBtn(C.wine)}>Editar</button>
-                <button onClick={() => remove(item.id)} style={smallBtn("#a33")}>Remover</button>
-              </div>
+            </div>
+          )}
+
+          {editingId !== item.id && (
+            <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+              <input
+                type="file"
+                accept="image/*"
+                ref={(el) => (fileInputRefs.current[item.id] = el)}
+                style={{ display: "none" }}
+                onChange={(e) => handlePhotoSelect(item, e.target.files[0])}
+              />
+              <button
+                onClick={() => fileInputRefs.current[item.id]?.click()}
+                style={smallBtn(C.wine)}
+                disabled={uploadingId === item.id}
+              >
+                {uploadingId === item.id ? "Enviando…" : item.photo ? "Trocar foto" : "Adicionar foto"}
+              </button>
+              {item.photo && (
+                <button onClick={() => removePhoto(item)} style={smallBtn("#a87a2c")}>
+                  Remover foto
+                </button>
+              )}
+              <button onClick={() => startEdit(item)} style={smallBtn(C.wine)}>Editar</button>
+              <button onClick={() => remove(item.id)} style={smallBtn("#a33")}>Remover item</button>
             </div>
           )}
         </div>
